@@ -1,3 +1,6 @@
+const nextButton = document.getElementById('nextButton');
+const specialButton = document.getElementById('specialButton');
+
 enum CardType {
   desamorchage,
   bombe,
@@ -146,41 +149,26 @@ class Deck {
     this.cards = this.buildDeck();
   }
 
-  removeCardsFromDeck(cards: Card[]) {
-    for (const card of cards) {
-      const index = this.cards.findIndex(c => c.name === card.name && c.description === card.description && c.action === card.action);
-      if (index !== -1) {
-        this.cards.splice(index, 1);
-      }
-    }
+  drawCard(): void {
+    this.cards.pop();
   }
 
-  private buildDeck(): Card[] {
+  private buildDeck() {
     const deck: Card[] = [];
 
-    // Construire le deck en fonction du nombre de cartes de chaque type
     deck.push(...this.createMultipleCards(CardType.desamorchage, 6));
     deck.push(...this.createMultipleCards(CardType.bombe, 4));
     deck.push(...this.createMultipleCards(CardType.attaque, 8));
     deck.push(...this.createMultipleCards(CardType.non, 5));
-    deck.push(...this.createMultipleCards(CardType.melanger, 2));
+    deck.push(...this.createMultipleCards(CardType.melanger, 4));
     deck.push(...this.createMultipleCards(CardType.divination, 3));
-    deck.push(...this.createMultipleCards(CardType.paire, 5));
+    deck.push(...this.createMultipleCards(CardType.paire, 8));
     deck.push(...this.createMultipleCards(CardType.faveur, 7));
-    deck.push(...this.createMultipleCards(CardType.passeSonTour, 4));
+    deck.push(...this.createMultipleCards(CardType.passeSonTour, 5));
 
     this.shuffle(deck);
+    return deck;
 
-    const totalPlayerCards = playerDecks.reduce((acc, playerDeck) => acc + playerDeck.cards.length, 0);
-
-    const remainingCardsCount = 50 - totalPlayerCards;
-
-    if (remainingCardsCount < 0) {
-      console.log('Erreur: Le nombre total de cartes distribuées aux joueurs dépasse le nombre total de cartes dans le deck.');
-      return [];
-    }
-
-    return deck.slice(0, remainingCardsCount);
   }
 
   private shuffle(deck: Card[]) {
@@ -206,16 +194,8 @@ export class PlayerDeck {
     this.cards = this.buildPlayerDeck();
   }
 
-  drawCard(deck: Deck) {
-    if (deck.cards.length > 0) {
-      const drawnCard = deck.cards.shift(); // Prendre la première carte du deck
-      if (drawnCard) {
-        this.cards.push(drawnCard); // Ajouter la carte piochée au deck du joueur
-        console.log(`Le joueur a pioché une carte : ${drawnCard.name}`);
-      }
-    } else {
-      console.log('Le deck est vide. Impossible de piocher une carte.');
-    }
+  checkPlayerDeck(player: number) {
+    console.log(`Joueur ${player} : `, this.cards);
   }
 
   private buildPlayerDeck(): Card[] {
@@ -239,57 +219,61 @@ export class PlayerDeck {
 
     return playerDeck;
   }
+
 }
 
-let currentPlayerIndex = 0; // Indice du joueur actuel
-const playerDecks: PlayerDeck[] = []; // Tableau des decks des joueurs
+let playerDecks: PlayerDeck[] = [];
 
-// Fonction pour passer au joueur suivant
-function nextPlayer(deck: Deck) {
-  currentPlayerIndex++; // Passer au joueur suivant
-  if (currentPlayerIndex >= playerDecks.length) {
-    currentPlayerIndex = 0; // Revenir au premier joueur si on a atteint le dernier joueur
+function checkPlayerDeck(player: number) {
+  if (playerDecks[player - 1]) {
+    console.log(`Joueur ${player} : `, playerDecks[player - 1].cards);
+  } else {
+    console.log(`Le deck du joueur ${player} n'a pas encore été créé.`);
   }
-  const currentPlayerDeck = playerDecks[currentPlayerIndex];
-  currentPlayerDeck.drawCard(deck); // Le joueur suivant pioche une carte
-  displayCurrentGameState(deck); // Afficher l'état actuel du jeu
 }
 
-// Fonction pour afficher l'état actuel du jeu
-function displayCurrentGameState(deck: Deck) {
-  console.log('--- État actuel du jeu ---');
-  console.log('Deck principal : ', deck.cards);
-  playerDecks.forEach((playerDeck, index) => {
-    console.log(`Joueur ${index + 1} : `, playerDeck.cards);
-  });
-}
+const deck = new Deck();
 
 function main() {
-  // Création du deck principal
-  const deck = new Deck();
+  console.log('Deck principal : ', deck.cards);
 
-  // Création des decks pour 5 joueurs
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const playerDeck = new PlayerDeck();
     playerDecks.push(playerDeck);
+    console.log(`Joueur ${i + 1} : `, playerDeck.cards);
+    for (let j = 0; j < 7; j++) {
+      deck.drawCard();
+    }
   }
 
-  // Afficher l'état initial du jeu
-  displayCurrentGameState(deck);
-
-  // Piocher une carte pour chaque joueur au début du jeu
-  playerDecks.forEach(playerDeck => {
-    playerDeck.drawCard(deck);
-  });
-
-  // Afficher l'état du jeu après que chaque joueur ait pioché une carte
-  displayCurrentGameState(deck);
-
-  // Modélisation du bouton "Next"
-  const nextButton = document.createElement('button');
-  nextButton.textContent = 'Next';
-  nextButton.addEventListener('click', () => nextPlayer(deck));
-  document.body.appendChild(nextButton);
+  console.log('Deck principal après distribution : ', deck.cards);
 }
 
-export { Deck, main };
+
+let tour = 0;
+const numberOfPlayers = 4;
+
+nextButton?.addEventListener('click', () => {
+  console.log('Tour : ', tour);
+
+  if (deck.cards.length > 0) {
+    const currentPlayerDeck = playerDecks[tour];
+    const drawnCard = deck.cards.pop();
+    currentPlayerDeck.cards.push(drawnCard as Card);
+
+    checkPlayerDeck(tour + 1);
+    tour = (tour + 1) % numberOfPlayers;
+
+    console.log('Deck principal après le tour : ', deck.cards);
+  } else {
+    console.log('Le deck est vide. Le jeu est terminé.');
+  }
+});
+
+specialButton?.addEventListener('click', () => {
+  console.log('Le joueur utilise une carte spéciale.');
+});
+
+
+export { main };
+
