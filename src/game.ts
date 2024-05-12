@@ -10,7 +10,7 @@ enum CardType {
   passeSonTour
 }
 
-class Card {
+abstract class Card {
   name: string;
   description: string;
   action: string;
@@ -20,11 +20,17 @@ class Card {
     this.description = description;
     this.action = action;
   }
+
+  abstract power(): void;
 }
 
 class Desamorchage extends Card {
   constructor() {
     super('Desamorchage', 'Neutralise une Bombe.', 'Neutralize');
+  }
+
+  power() {
+    console.log('Pouvoir de la carte Desamorchage : Neutralise une Bombe.');
   }
 }
 
@@ -32,11 +38,19 @@ class Bombe extends Card {
   constructor() {
     super('Bombe', 'Vous explosez si vous piochez cette carte sans désamorçage.', 'Explode');
   }
+
+  power() {
+    console.log('Pouvoir de la carte Bombe : Vous explosez si vous piochez cette carte sans désamorçage.');
+  }
 }
 
 class Attaque extends Card {
   constructor() {
     super('Attaque', 'Attaque un adversaire.', 'Attack');
+  }
+
+  power() {
+    console.log('Pouvoir de la carte Attaque : Attaque un adversaire.');
   }
 }
 
@@ -44,11 +58,19 @@ class Non extends Card {
   constructor() {
     super('Non', 'Annulez une action ou une attaque d’un adversaire.', 'Cancel');
   }
+
+  power() {
+    console.log('Pouvoir de la carte Non : Annulez une action ou une attaque d’un adversaire.');
+  }
 }
 
 class Melanger extends Card {
   constructor() {
     super('Melanger', 'Mélangez le deck.', 'Shuffle');
+  }
+
+  power() {
+    console.log('Pouvoir de la carte Melanger : Mélangez le deck.');
   }
 }
 
@@ -56,11 +78,19 @@ class Divination extends Card {
   constructor() {
     super('Divination', 'Regardez les trois prochaines cartes du deck.', 'Foresee');
   }
+
+  power() {
+    console.log('Pouvoir de la carte Divination : Regardez les trois prochaines cartes du deck.');
+  }
 }
 
 class Paire extends Card {
   constructor(name: string, description: string) {
     super(name, description, 'Steal');
+  }
+
+  power() {
+    console.log('Pouvoir de la carte Paire : Echangez votre main avec celle d’un adversaire.');
   }
 }
 
@@ -68,11 +98,19 @@ class Faveur extends Card {
   constructor() {
     super('Faveur', 'Piochez deux cartes.', 'Draw');
   }
+
+  power() {
+    console.log('Pouvoir de la carte Faveur : Piochez deux cartes.');
+  }
 }
 
 class PasseSonTour extends Card {
   constructor() {
     super('PasseSonTour', 'Passez votre tour.', 'Skip');
+  }
+
+  power() {
+    console.log('Pouvoir de la carte PasseSonTour : Passez votre tour.');
   }
 }
 
@@ -120,6 +158,7 @@ class Deck {
   private buildDeck(): Card[] {
     const deck: Card[] = [];
 
+    // Construire le deck en fonction du nombre de cartes de chaque type
     deck.push(...this.createMultipleCards(CardType.desamorchage, 6));
     deck.push(...this.createMultipleCards(CardType.bombe, 4));
     deck.push(...this.createMultipleCards(CardType.attaque, 8));
@@ -130,11 +169,18 @@ class Deck {
     deck.push(...this.createMultipleCards(CardType.faveur, 7));
     deck.push(...this.createMultipleCards(CardType.passeSonTour, 4));
 
-    const additionalCardsCount = 50 - deck.length;
-    deck.push(...this.createMultipleCards(CardType.attaque, additionalCardsCount));
-
     this.shuffle(deck);
-    return deck;
+
+    const totalPlayerCards = playerDecks.reduce((acc, playerDeck) => acc + playerDeck.cards.length, 0);
+
+    const remainingCardsCount = 50 - totalPlayerCards;
+
+    if (remainingCardsCount < 0) {
+      console.log('Erreur: Le nombre total de cartes distribuées aux joueurs dépasse le nombre total de cartes dans le deck.');
+      return [];
+    }
+
+    return deck.slice(0, remainingCardsCount);
   }
 
   private shuffle(deck: Card[]) {
@@ -153,12 +199,23 @@ class Deck {
   }
 }
 
-
 export class PlayerDeck {
   cards: Card[];
 
   constructor() {
     this.cards = this.buildPlayerDeck();
+  }
+
+  drawCard(deck: Deck) {
+    if (deck.cards.length > 0) {
+      const drawnCard = deck.cards.shift(); // Prendre la première carte du deck
+      if (drawnCard) {
+        this.cards.push(drawnCard); // Ajouter la carte piochée au deck du joueur
+        console.log(`Le joueur a pioché une carte : ${drawnCard.name}`);
+      }
+    } else {
+      console.log('Le deck est vide. Impossible de piocher une carte.');
+    }
   }
 
   private buildPlayerDeck(): Card[] {
@@ -184,38 +241,55 @@ export class PlayerDeck {
   }
 }
 
+let currentPlayerIndex = 0; // Indice du joueur actuel
+const playerDecks: PlayerDeck[] = []; // Tableau des decks des joueurs
 
-function displayDeck(deck: Deck) {
-  console.log('Deck principal : ', deck.cards);
+// Fonction pour passer au joueur suivant
+function nextPlayer(deck: Deck) {
+  currentPlayerIndex++; // Passer au joueur suivant
+  if (currentPlayerIndex >= playerDecks.length) {
+    currentPlayerIndex = 0; // Revenir au premier joueur si on a atteint le dernier joueur
+  }
+  const currentPlayerDeck = playerDecks[currentPlayerIndex];
+  currentPlayerDeck.drawCard(deck); // Le joueur suivant pioche une carte
+  displayCurrentGameState(deck); // Afficher l'état actuel du jeu
 }
 
-// Création du deck principal
+// Fonction pour afficher l'état actuel du jeu
+function displayCurrentGameState(deck: Deck) {
+  console.log('--- État actuel du jeu ---');
+  console.log('Deck principal : ', deck.cards);
+  playerDecks.forEach((playerDeck, index) => {
+    console.log(`Joueur ${index + 1} : `, playerDeck.cards);
+  });
+}
+
 function main() {
   // Création du deck principal
   const deck = new Deck();
 
   // Création des decks pour 5 joueurs
-  const playerDecks: PlayerDeck[] = [];
   for (let i = 0; i < 5; i++) {
     const playerDeck = new PlayerDeck();
     playerDecks.push(playerDeck);
   }
 
-  // Retirer les cartes des joueurs du deck principal
+  // Afficher l'état initial du jeu
+  displayCurrentGameState(deck);
+
+  // Piocher une carte pour chaque joueur au début du jeu
   playerDecks.forEach(playerDeck => {
-    deck.removeCardsFromDeck(playerDeck.cards);
+    playerDeck.drawCard(deck);
   });
 
-  // Affichage des decks des joueurs
-  console.log('Decks des joueurs : ');
-  playerDecks.forEach((playerDeck, index) => {
-    console.log(`Joueur ${index + 1} : `, playerDeck.cards);
-  });
+  // Afficher l'état du jeu après que chaque joueur ait pioché une carte
+  displayCurrentGameState(deck);
 
-  // Affichage du contenu du deck principal
-  displayDeck(deck);
+  // Modélisation du bouton "Next"
+  const nextButton = document.createElement('button');
+  nextButton.textContent = 'Next';
+  nextButton.addEventListener('click', () => nextPlayer(deck));
+  document.body.appendChild(nextButton);
 }
 
-
-export { Deck, displayDeck, main };
-
+export { Deck, main };
