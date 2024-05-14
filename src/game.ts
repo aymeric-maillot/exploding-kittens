@@ -1,6 +1,9 @@
 const nextButton = document.getElementById('nextButton');
 const specialButton = document.getElementById('specialButton');
 
+let tour = 0;
+const numberOfPlayers = 4;
+
 enum CardType {
   desamorchage,
   bombe,
@@ -13,107 +16,121 @@ enum CardType {
   passeSonTour
 }
 
-abstract class Card {
+interface Card {
   name: string;
   description: string;
   action: string;
 
-  constructor(name: string, description: string, action: string) {
+  power(deck: Card[] | number): void;
+}
+
+class Desamorchage implements Card {
+  name = 'Desamorchage';
+  description = 'Neutralise une Bombe.';
+  action = 'Neutralize';
+
+  power(deck: Card[]): void {
+    console.log('Pouvoir de la carte Desamorchage : Neutralise une Bombe.');
+    console.log(deck);
+  }
+}
+
+class Bombe implements Card {
+  name = 'Bombe';
+  description = 'Vous explosez si vous piochez cette carte sans désamorçage.';
+  action = 'Explode';
+
+  power(deck: Card[]): void {
+    console.log('Pouvoir de la carte Bombe : Vous explosez si vous piochez cette carte sans désamorçage.');
+    console.log(deck);
+  }
+}
+
+class PasseSonTour implements Card {
+  name = 'PasseSonTour';
+  description = 'Passez votre tour.';
+  action = 'Skip your turn.';
+
+  power(tour: number): void {
+    console.log('Pouvoir de la carte PasseSonTour : Passez votre tour.');
+    tour = (tour + 1) % numberOfPlayers;
+    updateTurnDisplay();
+    displayPlayerCards();
+  }
+}
+
+class Attaque implements Card {
+  name = 'Attaque';
+  description = 'La victime pioche 2 cartes.';
+  action = 'Draw 2 cards.';
+
+  power(deck: Card[]): void {
+    console.log('Pouvoir de la carte Attaque : La victime pioche 2 cartes.');
+    deck.push(...deck.slice(deck.length - 2));
+  }
+}
+
+class Non implements Card {
+  name = 'Non';
+  description = 'Neutralise une Attaque.';
+  action = 'Neutralize';
+
+  //  @ts-ignore
+  power(deck: Card[]): void {
+    console.log('Pouvoir de la carte Non : Neutralise une Attaque.');
+  }
+}
+
+class Melanger implements Card {
+  name = 'Melanger';
+  description = 'Mélangez votre main avec celle d’un adversaire.';
+  action = 'Shuffle your hand with an opponent.';
+
+  // @ts-ignore
+  power(deck: Card[]): void {
+    console.log('Pouvoir de la carte Melanger : Mélangez votre main avec celle d’un adversaire.');
+  }
+}
+
+class Divination implements Card {
+  name = 'Divination';
+  description = 'Pouvoir de la carte Divination : Visualiser trois premières cartes du deck.';
+  action = 'Look at an opponent\'s hand.';
+
+  // @ts-ignore
+  power(deck: Card[]): void {
+    console.log(this.description);
+    for (let i = 0; i < 3; i++) {
+      console.log(deck[i]);
+    }
+  }
+}
+
+class Paire implements Card {
+  name: string;
+  description: string;
+  action = 'Swap your hand with an opponent\'s hand.';
+
+  constructor(name: string, description: string) {
     this.name = name;
     this.description = description;
-    this.action = action;
   }
 
-  abstract power(): void;
-}
 
-class Desamorchage extends Card {
-  constructor() {
-    super('Desamorchage', 'Neutralise une Bombe.', 'Neutralize');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte Desamorchage : Neutralise une Bombe.');
-  }
-}
-
-class Bombe extends Card {
-  constructor() {
-    super('Bombe', 'Vous explosez si vous piochez cette carte sans désamorçage.', 'Explode');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte Bombe : Vous explosez si vous piochez cette carte sans désamorçage.');
-  }
-}
-
-class Attaque extends Card {
-  constructor() {
-    super('Attaque', 'Attaque un adversaire.', 'Attack');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte Attaque : Attaque un adversaire.');
-  }
-}
-
-class Non extends Card {
-  constructor() {
-    super('Non', 'Annulez une action ou une attaque d’un adversaire.', 'Cancel');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte Non : Annulez une action ou une attaque d’un adversaire.');
-  }
-}
-
-class Melanger extends Card {
-  constructor() {
-    super('Melanger', 'Mélangez le deck.', 'Shuffle');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte Melanger : Mélangez le deck.');
-  }
-}
-
-class Divination extends Card {
-  constructor() {
-    super('Divination', 'Regardez les trois prochaines cartes du deck.', 'Foresee');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte Divination : Regardez les trois prochaines cartes du deck.');
-  }
-}
-
-class Paire extends Card {
-  constructor(name: string, description: string) {
-    super(name, description, 'Steal');
-  }
-
-  power() {
+  // @ts-ignore
+  power(deck: Card[]): void {
     console.log('Pouvoir de la carte Paire : Echangez votre main avec celle d’un adversaire.');
   }
 }
 
-class Faveur extends Card {
-  constructor() {
-    super('Faveur', 'Piochez deux cartes.', 'Draw');
-  }
+class Faveur implements Card {
+  name = 'Faveur';
+  description = 'Echangez votre main avec celle du joueur de votre choix.';
+  action = 'Swap your';
 
-  power() {
-    console.log('Pouvoir de la carte Faveur : Piochez deux cartes.');
-  }
-}
-
-class PasseSonTour extends Card {
-  constructor() {
-    super('PasseSonTour', 'Passez votre tour.', 'Skip');
-  }
-
-  power() {
-    console.log('Pouvoir de la carte PasseSonTour : Passez votre tour.');
+  // @ts-ignore
+  power(deck: Card[]): void {
+    console.log('Pouvoir de la carte Faveur : Echangez votre main avec celle du joueur de votre choix.');
   }
 }
 
@@ -168,7 +185,6 @@ class Deck {
 
     this.shuffle(deck);
     return deck;
-
   }
 
   private shuffle(deck: Card[]) {
@@ -187,7 +203,7 @@ class Deck {
   }
 }
 
-export class PlayerDeck {
+class PlayerDeck {
   cards: Card[];
 
   constructor() {
@@ -219,7 +235,6 @@ export class PlayerDeck {
 
     return playerDeck;
   }
-
 }
 
 let playerDecks: PlayerDeck[] = [];
@@ -249,9 +264,44 @@ function main() {
   console.log('Deck principal après distribution : ', deck.cards);
 }
 
+function updateTurnDisplay() {
+  const tourDisplay = document.getElementById('tourDisplay');
+  if (tourDisplay) {
+    tourDisplay.textContent = `Tour : ${tour}`;
+  }
+}
 
-let tour = 0;
-const numberOfPlayers = 4;
+function displayPlayerCards() {
+  const app = document.getElementById('app');
+  if (app) {
+    app.innerHTML = ''; // Clear previous cards
+
+    const currentPlayerDeck = playerDecks[tour];
+    const cardContainer = document.createElement('div');
+    cardContainer.classList.add('card-container');
+
+    currentPlayerDeck.cards.forEach((card, index) => {
+      const cardElement = document.createElement('div');
+      cardElement.textContent = `${index + 1}. ${card.name} - ${card.description}`;
+      cardElement.classList.add('card');
+
+      cardElement.addEventListener('click', () => {
+        if (card instanceof PasseSonTour) {
+          card.power(tour);
+          tour = (tour + 1) % numberOfPlayers;
+          updateTurnDisplay();
+          displayPlayerCards();
+        } else {
+          card.power(deck.cards);
+        }
+      });
+
+      cardContainer.appendChild(cardElement);
+    });
+
+    app.appendChild(cardContainer);
+  }
+}
 
 nextButton?.addEventListener('click', () => {
   console.log('Tour : ', tour);
@@ -264,6 +314,9 @@ nextButton?.addEventListener('click', () => {
     checkPlayerDeck(tour + 1);
     tour = (tour + 1) % numberOfPlayers;
 
+    updateTurnDisplay();
+    displayPlayerCards();
+
     console.log('Deck principal après le tour : ', deck.cards);
   } else {
     console.log('Le deck est vide. Le jeu est terminé.');
@@ -271,9 +324,7 @@ nextButton?.addEventListener('click', () => {
 });
 
 specialButton?.addEventListener('click', () => {
-  console.log('Le joueur utilise une carte spéciale.');
+  displayPlayerCards();
 });
 
-
 export { main };
-
